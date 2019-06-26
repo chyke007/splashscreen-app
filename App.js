@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
-import { Platform, StyleSheet, Text, View, ActivityIndicator,FlatList, Dimensions,Image,Animated,TouchableWithoutFeedback ,TouchableOpacity} from 'react-native';
+import { Platform, StyleSheet, Text, View, ActivityIndicator,FlatList, Dimensions,Image,Animated,TouchableWithoutFeedback ,TouchableOpacity, CameraRoll,Share} from 'react-native';
 import {Ionicons} from '@expo/vector-icons';
+import * as Permissions from 'expo-permissions';
+import * as FileSystem from 'expo-file-system';
 const instructions = Platform.select({
   ios: 'Press Cmd+R to reload,\n' + 'Cmd+D or shake for dev menu',
   android: 'Double tap R on your keyboard to reload,\n' + 'Shake or press menu button for dev menu',
@@ -24,6 +26,11 @@ export default class App extends Component {
       outputRange:[0,-80]
 
     })
+    this.borderRadius = this.state.scale.interpolate({
+      inputRange:[0.9,1],
+      outputRange:[30,0]
+
+    })
   }
 
   loadWallpapers = () => {
@@ -41,6 +48,39 @@ export default class App extends Component {
         
       });
   }
+
+shareWallpaper = async image => {
+ try{
+      await Share.share({
+        message:'Checkout this wallpaper '+ image.urls.full
+      });
+ }catch(e){
+    alert('An error occured while trying to share the image, pleae try again later');
+ }
+  }
+
+saveToCameraRoll = async (image) => {
+ let cameraPermission = await Permissions.getAsync(Permissions.CAMERA_ROLL)
+
+if(cameraPermission.status !='granted'){
+  cameraPermission = await Permissions.askAsync(Permissions.CAMERA_ROLL)
+
+}
+
+if(cameraPermission.status ==='granted'){
+  FileSystem.downloadAsync(image.urls.regular,
+    FileSystem.documentDirectory+image.id+'.jpg'
+    ).then(({uri}) => {
+      CameraRoll.saveToCameraRoll(uri);
+      alert('Saved to Photos')
+    }).catch(error => {
+      alert('An error occured when trying to save the image, please connect to the internet and try again later.')
+    })
+}else{
+  alert('Requires camera roll permission');
+}
+}
+
 showControls = () =>{
   this.setState((state)=>({
     isImageFocused:!state.isImageFocused
@@ -67,29 +107,29 @@ showControls = () =>{
     return  (
      <View style={{ flex:1 }}>
        <View style={ styles.container}>
-          <ActivityIndicator size="large" color="grey"></ActivityIndicator>
+        <ActivityIndicator size="large" color="grey"></ActivityIndicator>
         <Text style={styles.welcome}>Loading ... Please wait {this.state.isLoading}</Text>
-         </View> 
-         <TouchableWithoutFeedback onPress={() => this.showControls(item)}>
+       </View> 
+       <TouchableWithoutFeedback onPress={() => this.showControls(item)}>
        <Animated.View style={[{height,width },this.scale]}>
-        <Image 
-        style={{flex:1, height:null, width: null}} 
+        <Animated.Image 
+        style={{flex:1, height:null, width: null,borderRadius:this.borderRadius}} 
         source ={{uri:item.urls.regular}}
-        resizeMode="cover"></Image>
+        resizeMode="cover"></Animated.Image>
       </Animated.View>
       </TouchableWithoutFeedback>
       <Animated.View style={{right:0,left:0,bottom:this.actionBarY,height:80,position:'absolute',flexDirection: 'row',justifyContent: 'space-around',backgroundColor:'black'}}>
         <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
-          <TouchableOpacity activeOpacity={0.5} onPress = {() => alert('Loading new images....')}>
+          <TouchableOpacity activeOpacity={0.5} onPress = {() => this.loadWallpapers()}>
           <Ionicons name="ios-refresh" size={40} color="white"> </Ionicons></TouchableOpacity>
           </View>
           <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
-          <TouchableOpacity activeOpacity={0.5} onPress = {() => alert('Sharing images....')}>
-          <Ionicons name="ios-share" size={40} color="white"> </Ionicons></TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.5} onPress = {() => this.saveToCameraRoll(item)}>
+          <Ionicons name="ios-save" size={40} color="white"> </Ionicons></TouchableOpacity>
           </View>
           <View style={{flex:1,alignItems:'center',justifyContent:'center'}}>
-          <TouchableOpacity activeOpacity={0.5} onPress = {() => alert('Saving images....')}>
-          <Ionicons name="ios-save" size={40} color="white"> </Ionicons></TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.5} onPress = {() => this.shareWallpaper(item)}>
+          <Ionicons name="ios-share" size={40} color="white"> </Ionicons></TouchableOpacity>
           </View>
       </Animated.View>
       

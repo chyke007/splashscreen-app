@@ -1,9 +1,12 @@
 {
   "expo": {
-    "name": "Expo Blank",
-    "slug": "Expo.blank.app",
+    "name": "Wallpaper",
+    "slug": "wallpaper-app-basic",
     "privacy": "public",
     "sdkVersion": "33.0.0",
+    "android":{
+      "package":"com.chyke.wallpaper"
+    },
     "platforms": [
       "ios",
       "android",
@@ -25,6 +28,7 @@
     ],
     "ios": {
       "supportsTablet": true
-    }
+    },
+    "description": ""
   }
 }
